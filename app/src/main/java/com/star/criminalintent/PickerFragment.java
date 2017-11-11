@@ -12,9 +12,9 @@ public abstract class PickerFragment extends DialogFragment {
 
     protected static final String ARG_DATE = "date";
 
-    protected Calendar mCalendar;
-
     public static final String EXTRA_DATE = "com.star.criminalintent.date";
+
+    protected Calendar mCalendar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
