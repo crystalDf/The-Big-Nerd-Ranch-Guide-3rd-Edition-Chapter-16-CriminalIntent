@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ShareCompat;
@@ -20,13 +22,17 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
 import com.star.criminalintent.model.Crime;
 import com.star.criminalintent.model.Suspect;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -38,11 +44,14 @@ public class CrimeFragment extends Fragment {
 
     private static final String DIALOG_DATE = "DialogDate";
     private static final String DIALOG_TIME = "DialogTime";
+    private static final String DIALOG_DETAIL_DISPLAY = "DialogDetailDisplay";
 
     private static final int REQUEST_CODE = 0;
     private static final int REQUEST_CONTACT = 1;
+    private static final int REQUEST_PHOTO = 2;
 
     private Crime mCrime;
+    private File mPhotoFile;
 
     private EditText mTitleField;
     private Button mDateButton;
@@ -52,6 +61,8 @@ public class CrimeFragment extends Fragment {
     private Button mReportButton;
     private Button mSuspectButton;
     private Button mDialButton;
+    private ImageView mPhotoView;
+    private ImageButton mCameraButton;
 
     public static CrimeFragment newInstance(UUID crimeId) {
         Bundle args = new Bundle();
@@ -173,6 +184,38 @@ public class CrimeFragment extends Fragment {
             mDialButton.setText(mCrime.getSuspect().getPhoneNumber());
         } else {
             mDialButton.setEnabled(false);
+        }
+
+        mPhotoView = view.findViewById(R.id.crime_photo);
+        mPhotoView.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        updatePhotoView();
+                        mPhotoView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    }
+                });
+
+        mPhotoView.setOnClickListener(v -> {
+            FragmentManager fragmentManager = getFragmentManager();
+            DetailDisplayFragment detailDisplayFragment =
+                    DetailDisplayFragment.newInstance(mPhotoFile.getPath());
+            detailDisplayFragment.show(fragmentManager, DIALOG_DETAIL_DISPLAY);
+        });
+
+        final Intent captureImageIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        mCameraButton = view.findViewById(R.id.crime_camera);
+        mCameraButton.setOnClickListener(v -> startActivityForResult(captureImageIntent, REQUEST_PHOTO));
+
+        boolean canTakePhoto = (mPhotoFile != null) &&
+                (captureImageIntent.resolveActivity(packageManager) != null);
+
+        mCameraButton.setEnabled(canTakePhoto);
+
+        if (canTakePhoto) {
+            Uri targetUri = Uri.fromFile(mPhotoFile);
+            captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, targetUri);
         }
 
         return  view;
@@ -342,5 +385,17 @@ public class CrimeFragment extends Fragment {
 
         return getString(R.string.crime_report, mCrime.getTitle(), dateString,
                 solvedString, requiresPoliceString, displayName);
+    }
+
+    private void updatePhotoView() {
+        if ((mPhotoFile == null) || !mPhotoFile.exists()) {
+            mPhotoView.setImageBitmap(null);
+            mPhotoView.setClickable(false);
+        } else {
+            Bitmap bitmap = PictureUtils.getScaledBitmap(
+                    mPhotoFile.getPath(), mPhotoView.getWidth(), mPhotoView.getHeight());
+            mPhotoView.setImageBitmap(bitmap);
+            mPhotoView.setClickable(true);
+        }
     }
 }
