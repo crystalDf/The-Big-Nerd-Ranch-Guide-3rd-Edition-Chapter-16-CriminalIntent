@@ -14,6 +14,7 @@ import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.content.FileProvider;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -82,6 +83,7 @@ public class CrimeFragment extends Fragment {
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
 
         mCrime = CrimeLab.getInstance(getActivity()).getCrime(crimeId);
+        mPhotoFile = CrimeLab.getInstance(getActivity()).getPhotoFile(mCrime);
     }
 
     @Override
@@ -206,7 +208,12 @@ public class CrimeFragment extends Fragment {
         final Intent captureImageIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         mCameraButton = view.findViewById(R.id.crime_camera);
-        mCameraButton.setOnClickListener(v -> startActivityForResult(captureImageIntent, REQUEST_PHOTO));
+        mCameraButton.setOnClickListener(v -> {
+            Uri targetUri = FileProvider.getUriForFile(getActivity(),
+                    "com.star.criminalintent.fileprovider", mPhotoFile);
+            captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, targetUri);
+            startActivityForResult(captureImageIntent, REQUEST_PHOTO);
+        });
 
         boolean canTakePhoto = (mPhotoFile != null) &&
                 (captureImageIntent.resolveActivity(packageManager) != null);
