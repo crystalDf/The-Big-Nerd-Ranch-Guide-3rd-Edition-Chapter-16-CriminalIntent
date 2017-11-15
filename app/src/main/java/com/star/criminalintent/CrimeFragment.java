@@ -4,6 +4,7 @@ package com.star.criminalintent;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -36,6 +37,7 @@ import com.star.criminalintent.model.Suspect;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -212,6 +214,17 @@ public class CrimeFragment extends Fragment {
             Uri targetUri = FileProvider.getUriForFile(getActivity(),
                     "com.star.criminalintent.fileprovider", mPhotoFile);
             captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, targetUri);
+
+            List<ResolveInfo> cameraActivities =
+                    getActivity().getPackageManager().queryIntentActivities(
+                            captureImageIntent, PackageManager.MATCH_DEFAULT_ONLY
+                    );
+
+            for (ResolveInfo cameraActivity : cameraActivities) {
+                getActivity().grantUriPermission(cameraActivity.activityInfo.packageName,
+                        targetUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            }
+
             startActivityForResult(captureImageIntent, REQUEST_PHOTO);
         });
 
@@ -219,11 +232,6 @@ public class CrimeFragment extends Fragment {
                 (captureImageIntent.resolveActivity(packageManager) != null);
 
         mCameraButton.setEnabled(canTakePhoto);
-
-        if (canTakePhoto) {
-            Uri targetUri = Uri.fromFile(mPhotoFile);
-            captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, targetUri);
-        }
 
         return  view;
     }

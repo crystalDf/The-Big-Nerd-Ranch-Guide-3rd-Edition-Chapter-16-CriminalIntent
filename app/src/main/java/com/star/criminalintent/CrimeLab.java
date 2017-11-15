@@ -14,6 +14,7 @@ import com.star.criminalintent.database.SuspectCursorWrapper;
 import com.star.criminalintent.model.Crime;
 import com.star.criminalintent.model.Suspect;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -169,5 +170,13 @@ public class CrimeLab {
         contentValues.put(SuspectTable.Cols.CRIME_COUNT, suspect.getCrimeCount());
 
         return contentValues;
+    }
+
+    public File getPhotoFile(Crime crime) {
+        File filesDir = mContext.getFilesDir();
+
+        return (filesDir != null)
+                ? new File(filesDir, crime.getPhotoFileName())
+                : null;
     }
 }
