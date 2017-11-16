@@ -258,19 +258,26 @@ public class CrimeFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if ((resultCode != Activity.RESULT_OK) || (data == null)) {
+        if ((resultCode != Activity.RESULT_OK)) {
             return;
         }
 
-        if (requestCode == REQUEST_CODE) {
+        if ((requestCode == REQUEST_CODE) && (data != null)) {
             Date date = (Date) data.getSerializableExtra(PickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
             updateUI();
-        } else if (requestCode == REQUEST_CONTACT) {
+        } else if ((requestCode == REQUEST_CONTACT) && (data != null)) {
             updateChooseSuspectButton(data);
             updateMakeAPhoneCallButton();
 
             CrimeLab.getInstance(getContext()).updateSuspect(mCrime.getSuspect());
+        } else if (requestCode == REQUEST_PHOTO) {
+            Uri targetUri = FileProvider.getUriForFile(getActivity(),
+                    "com.star.criminalintent.fileprovider", mPhotoFile);
+
+            getActivity().revokeUriPermission(targetUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            updatePhotoView();
         }
     }
 
